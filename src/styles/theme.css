@@ -1,0 +1,213 @@
+/* === Animations & effects (for glyph feedback) === */
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 rgba(16, 185, 129, 0.0);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);
+        transform: scale(1.03);
+    }
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.12);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes shakeX {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-4px);
+    }
+
+    40% {
+        transform: translateX(4px);
+    }
+
+    60% {
+        transform: translateX(-3px);
+    }
+
+    80% {
+        transform: translateX(3px);
+    }
+}
+
+/* Utility classes consumed by GlyphButton */
+.anim-glow {
+    animation: glowPulse 800ms ease-in-out;
+}
+
+.anim-pop {
+    animation: pop 180ms ease-out;
+}
+
+.anim-bad {
+    animation: shakeX 260ms ease-in-out;
+}
+
+.fake-tile {
+    opacity: .45;
+    filter: grayscale(45%);
+}
+
+/* === Witcher-specific additions === */
+
+/* Metallic frame (use on HUD/Score cards) */
+.frame-metal {
+    border: 1px solid rgba(212, 175, 55, .28);
+    border-radius: 12px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%),
+        rgba(20, 24, 31, .35);
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .35),
+        inset 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+/* Active glyph halo pulse by type (attach to .glyph--active element) */
+@keyframes runePulseCyan {
+    0% {
+        box-shadow: 0 0 0 rgba(120, 227, 255, 0);
+    }
+
+    60% {
+        box-shadow: 0 0 18px rgba(120, 227, 255, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(120, 227, 255, 0);
+    }
+}
+
+@keyframes runePulseEmber {
+    0% {
+        box-shadow: 0 0 0 rgba(255, 107, 61, 0);
+    }
+
+    60% {
+        box-shadow: 0 0 18px rgba(255, 107, 61, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(255, 107, 61, 0);
+    }
+}
+
+@keyframes runePulseGold {
+    0% {
+        box-shadow: 0 0 0 rgba(255, 215, 106, 0);
+    }
+
+    60% {
+        box-shadow: 0 0 18px rgba(255, 215, 106, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(255, 215, 106, 0);
+    }
+}
+
+@keyframes runePulseViolet {
+    0% {
+        box-shadow: 0 0 0 rgba(176, 106, 255, 0);
+    }
+
+    60% {
+        box-shadow: 0 0 18px rgba(176, 106, 255, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(176, 106, 255, 0);
+    }
+}
+
+@keyframes runePulseSoothe {
+    0% {
+        box-shadow: 0 0 0 rgba(231, 255, 247, 0);
+    }
+
+    60% {
+        box-shadow: 0 0 18px rgba(231, 255, 247, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(231, 255, 247, 0);
+    }
+}
+
+.rune-gale {
+    animation: runePulseCyan 1100ms ease-in-out infinite;
+}
+
+.rune-ember {
+    animation: runePulseEmber 1100ms ease-in-out infinite;
+}
+
+.rune-ward {
+    animation: runePulseGold 1100ms ease-in-out infinite;
+}
+
+.rune-snare {
+    animation: runePulseViolet 1100ms ease-in-out infinite;
+}
+
+.rune-soothe {
+    animation: runePulseSoothe 1100ms ease-in-out infinite;
+}
+
+/* Buttons small variants for glyphs inside modals */
+.btn-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .55rem .8rem;
+    border-radius: 10px;
+    border: 1px solid rgba(212, 175, 55, .45);
+    background: rgba(0, 0, 0, .28);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: .3px;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.btn-glyph:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, .35);
+}
+
+/* Big digits for countdown or GO */
+.countdown-digit {
+    font-family: 'Cinzel Decorative', 'Cinzel', serif;
+    font-size: clamp(42px, 9vw, 120px);
+    color: var(--fx-gold);
+    text-shadow: 0 6px 22px rgba(0, 0, 0, .75), 0 0 20px rgba(212, 175, 55, .35);
+}
+
+/* Mobile spacing helpers */
+.stack-sm {
+    gap: clamp(8px, 2.5vw, 16px);
+}
+
+.pad-sm {
+    padding: clamp(8px, 2.8vw, 16px);
+}

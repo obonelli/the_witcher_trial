@@ -1,0 +1,106 @@
+/* === Witcher Cursors (global, scoped) =====================================
+   Requiere PNG 32×32 en /public/assets/cursors/
+   (opcional @2x 64×64 con el mismo nombre + @2x)
+   Actívalo añadiendo la clase .custom-cursor en <body>
+=========================================================================== */
+
+/* Default para toda la app */
+body.custom-cursor,
+body.custom-cursor .witcher-app {
+    cursor: url('/assets/cursors/default_32x32.png') 8 4, auto !important;
+}
+
+/* Herencia dentro de la app para vencer "auto" genérico de Tailwind/MUI */
+body.custom-cursor .witcher-app * {
+    cursor: inherit !important;
+}
+
+/* Interactivos */
+body.custom-cursor a,
+body.custom-cursor button,
+body.custom-cursor [role="button"],
+body.custom-cursor :where(.MuiButton-root),
+body.custom-cursor .btn-witcher,
+body.custom-cursor .btn-witcher-ghost,
+body.custom-cursor .btn-start,
+body.custom-cursor .btn-start-danger {
+    cursor: url('/assets/cursors/pointer_32x32.png') 8 4, pointer !important;
+}
+
+/* Texto */
+body.custom-cursor input[type="text"],
+body.custom-cursor input[type="search"],
+body.custom-cursor input[type="email"],
+body.custom-cursor input[type="password"],
+body.custom-cursor textarea,
+body.custom-cursor [contenteditable="true"] {
+    cursor: url('/assets/cursors/text_32x32.png') 12 16, text !important;
+}
+
+/* Estados utilitarios */
+body.custom-cursor .cursor-aim {
+    cursor: url('/assets/cursors/crosshair_32x32.png') 16 16, crosshair !important;
+}
+
+body.custom-cursor .cursor-deny {
+    cursor: url('/assets/cursors/not-allowed_32x32.png') 12 12, not-allowed !important;
+}
+
+body.custom-cursor .is-draggable {
+    cursor: url('/assets/cursors/grab_32x32.png') 12 8, grab !important;
+}
+
+body.custom-cursor .is-grabbing {
+    cursor: url('/assets/cursors/grabbing_32x32.png') 12 8, grabbing !important;
+}
+
+/* Hijos de botones heredan (íconos, spans, etc.) */
+body.custom-cursor button *,
+body.custom-cursor .MuiButton-root * {
+    cursor: inherit !important;
+}
+
+/* Retina / HiDPI override */
+@media (min-resolution: 2dppx) {
+
+    body.custom-cursor,
+    body.custom-cursor .witcher-app {
+        cursor: url('/assets/cursors/default_64x64.png') 8 4, auto !important;
+    }
+
+    body.custom-cursor a,
+    body.custom-cursor button,
+    body.custom-cursor [role="button"],
+    body.custom-cursor :where(.MuiButton-root),
+    body.custom-cursor .btn-witcher,
+    body.custom-cursor .btn-witcher-ghost,
+    body.custom-cursor .btn-start,
+    body.custom-cursor .btn-start-danger {
+        cursor: url('/assets/cursors/pointer_64x64.png') 8 4, pointer !important;
+    }
+
+    body.custom-cursor input[type="text"],
+    body.custom-cursor input[type="search"],
+    body.custom-cursor input[type="email"],
+    body.custom-cursor input[type="password"],
+    body.custom-cursor textarea,
+    body.custom-cursor [contenteditable="true"] {
+        cursor: url('/assets/cursors/text_64x64.png') 12 16, text !important;
+    }
+
+    body.custom-cursor .cursor-aim {
+        cursor: url('/assets/cursors/crosshair_64x64.png') 16 16, crosshair !important;
+    }
+
+    body.custom-cursor .cursor-deny {
+        cursor: url('/assets/cursors/not-allowed_64x64.png') 12 12, not-allowed !important;
+    }
+
+    body.custom-cursor .is-draggable {
+        cursor: url('/assets/cursors/grab_64x64.png') 12 8, grab !important;
+    }
+
+    body.custom-cursor .is-grabbing {
+        cursor: url('/assets/cursors/grabbing_64x64.png') 12 8, grabbing !important;
+    }
+}

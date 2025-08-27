@@ -1,103 +1,95 @@
-import Image from "next/image";
+// src/app/page.tsx
+import AppHeader from '@/components/layout/AppHeader';
+import Link from 'next/link';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen text-white witcher-app">
+      <AppHeader />
+      {/* offset for fixed header */}
+      <div className="h-16 md:h-20" />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* ===== HERO ===== */}
+      <section className="relative">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(1200px 520px at 70% 80%, rgba(255,72,0,0.18), transparent 60%), linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0.35))',
+          }}
+        />
+        <div className="relative mx-auto play-wrap px-4 md:px-6 py-12 md:py-20">
+          <div className="max-w-3xl">
+            <span className="inline-block text-xs tracking-wide text-[color:var(--fx-steel)] mb-2">
+              v0.2 • guardian hunt
+            </span>
+
+            {/* volvemos al título anterior */}
+            <h1 className="witcher-title text-4xl md:text-5xl leading-tight">
+              Unleash the <span className="text-[color:var(--fx-gold)]">Guardians</span>, Defy the Beast
+            </h1>
+
+            <p className="mt-3 witcher-subtitle max-w-2xl">
+              A monstrous presence prowls the forest. Only the ancient animal spirits can tip the scales.
+              Channel each Sign at the right moment to summon its guardian—wind, flame, shield, snare, and calm—
+              and let their power aid Geralt in the fight. Keep the chain alive; if your energy hits zero,
+              the guardians fade and the hunt ends.
+            </p>
+
+            <div className="mt-6 flex items-center gap-3">
+              <Link href="/play" className="btn-witcher text-sm">
+                Begin the Rite
+              </Link>
+              <Link href="/how-to" className="btn-witcher-ghost text-sm">
+                Learn the Signs
+              </Link>
+            </div>
+
+            <p className="mt-4 text-xs text-[color:var(--fx-steel)]">
+              Tip: Keep a steady rhythm — anticipate the next glow instead of waiting for it to peak.
+            </p>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* ===== MISSION ===== */}
+      <section className="mx-auto play-wrap px-4 md:px-6 pt-10 md:pt-16 pb-10">
+        <div className="witcher-panel pad-sm">
+          <h2 className="witcher-title text-2xl mb-2">Your role</h2>
+          <ul className="list-disc pl-6 text-sm text-[color:var(--fx-steel)] space-y-1">
+            <li>Only one Sign glows at a time — tap it before your energy drains.</li>
+            <li>Each correct tap summons a guardian spirit and restores a bit of energy.</li>
+            <li>Misses drain extra energy; at 0, the guardians disperse and Geralt loses the edge.</li>
+            <li>Higher stages tighten the timing window and increase your score per summon.</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ===== FEATURES ===== */}
+      <section className="mx-auto play-wrap px-4 md:px-6 pb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="witcher-panel pad-sm">
+            <h3 className="witcher-title text-xl mb-1">Reflex & Timing</h3>
+            <p className="text-sm text-[color:var(--fx-steel)]">
+              React the instant the Sign appears. Smooth rhythm keeps guardians active and the beast at bay.
+            </p>
+          </div>
+
+          <div className="witcher-panel pad-sm">
+            <h3 className="witcher-title text-xl mb-1">Energy & Chain</h3>
+            <p className="text-sm text-[color:var(--fx-steel)]">
+              Summons refill a sliver of stamina and build your chain. Break it and the spirits weaken.
+            </p>
+          </div>
+
+          <div className="witcher-panel pad-sm">
+            <h3 className="witcher-title text-xl mb-1">Stages & Glory</h3>
+            <p className="text-sm text-[color:var(--fx-steel)]">
+              Survive waves to climb stages. Faster windows, stronger guardians — carve your name on the board.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
