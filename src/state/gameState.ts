@@ -1,3 +1,4 @@
+// src/state/gameState.ts
 // Game state + reducer (difficulty curve tuned via lib/difficulty.ts)
 // NOTE: keep all code comments in English.
 
@@ -13,7 +14,7 @@ import { sequenceLengthForLevel, inputWindowMs, ROUNDS_PER_LEVEL } from '@/lib/d
  */
 export const ENERGY_END_THRESH = 0.35;    // game over only under 35%
 export const ENERGY_GAIN_ON_HIT = 0.09;   // energy gained per correct tap
-export const ENERGY_LOSS_ON_MISS = 0.12;  // energy lost per wrong tap
+export const ENERGY_LOSS_ON_MISS = 0.12;  // energy lost per wrong tap or omission
 export const ENERGY_DECAY_PER_SEC = 0.12; // continuous decay while playing (↑ to drop faster)
 
 export type GameState = {
@@ -29,8 +30,16 @@ export type GameState = {
     sequence: GlyphId[];
     inputIndex: number; // kept for backward-compat, unused in live-tap mode
     score: number;
+
+    /** Current streak (resets on miss). */
     streak: number;
+
+    /** Highest streak achieved in the run (for stats/achievements). */
     streakMax: number;
+
+    /** Persistent “speed/multiplier momentum”. Never decreases on miss. */
+    momentum: number;
+
     correctTotal: number;
     playedTotal: number;
     seed: number;
@@ -57,6 +66,7 @@ export const initialState: GameState = {
     score: 0,
     streak: 0,
     streakMax: 0,
+    momentum: 0,
     correctTotal: 0,
     playedTotal: 0,
     seed: 12345,
@@ -70,7 +80,8 @@ export type GameEvent =
     | { type: 'SET_SEQUENCE'; sequence: GlyphId[] }
     | { type: 'SEQ_SHOWN' }
     | { type: 'INPUT'; glyph: GlyphId; now: number } // classic mode (kept for compatibility)
-    | { type: 'LIVE_HIT'; ok: boolean; idx: number; glyph: GlyphId; now: number } // live-tap mode
+    | { type: 'LIVE_HIT'; ok: boolean; idx: number; glyph: GlyphId; now: number } // live-tap mode (tap while lit)
+    | { type: 'LIVE_MISS'; idx: number } // live-tap omission (index finished lit and was not tapped)
     | { type: 'ROUND_SUCCESS'; now: number }
     | { type: 'ROUND_FAIL' }
     | { type: 'TIMEOUT' }
@@ -94,6 +105,13 @@ export function generateSequence(level: number, seed: number): GlyphId[] {
         seq.push(ids[idx] as GlyphId);
     }
     return seq;
+}
+
+/** While the player is on a positive streak, ignore background negative decay. */
+function shouldBlockDecay(state: GameState, delta: number): boolean {
+    // Only block negative deltas (background decay), and only during active play
+    // when the player is hitting correctly (streak > 0).
+    return delta < 0 && state.phase === 'showingSequence' && state.streak > 0;
 }
 
 export function gameReducer(state: GameState, ev: GameEvent): GameState {
@@ -133,7 +151,8 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
             const hits = state.liveHits.filter(Boolean).length;
             const perfect = hits === state.sequence.length;
 
-            const mult = streakMultiplier(state.streak);
+            // 💡 xMult now uses persistent momentum (doesn't drop on miss)
+            const mult = streakMultiplier(state.momentum);
             const spd = speedBonus(0, state.roundTotalMs ?? 0, 50); // effectively 0
             const roundScore = calcRoundScore({
                 correctCount: hits,
@@ -147,7 +166,7 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
                 ...state,
                 phase: 'success',
                 score: state.score + roundScore,
-                // played/correct totals were updated incrementally in LIVE_HIT
+                // played/correct totals were updated incrementally in LIVE_HIT/LIVE_MISS
             };
         }
 
@@ -161,17 +180,19 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
             const correctTotal = state.correctTotal + (correct ? 1 : 0);
 
             if (!correct) {
+                // On any failure, streak resets to 0, but momentum persists
                 return { ...state, phase: 'fail', playedTotal, correctTotal, streak: 0, endReason: 'other' };
             }
 
             const nextIndex = state.inputIndex + 1;
             const streak = state.streak + 1;
             const streakMax = Math.max(state.streakMax, streak);
+            const momentum = Math.max(state.momentum, streak); // 🚀 keep the best
 
             if (nextIndex >= state.sequence.length) {
                 const roundTotalMs = state.roundTotalMs ?? 0;
                 const timeRemainingMs = Math.max(0, (state.roundStartMs ?? ev.now) + roundTotalMs - ev.now);
-                const mult = streakMultiplier(streak);
+                const mult = streakMultiplier(momentum); // use momentum
                 const spd = speedBonus(timeRemainingMs, roundTotalMs, 50);
                 const roundScore = calcRoundScore({
                     correctCount: state.sequence.length,
@@ -187,13 +208,14 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
                     inputIndex: nextIndex,
                     streak,
                     streakMax,
+                    momentum,
                     playedTotal,
                     correctTotal,
                     score: state.score + roundScore,
                 };
             }
 
-            return { ...state, inputIndex: nextIndex, streak, streakMax, playedTotal, correctTotal };
+            return { ...state, inputIndex: nextIndex, streak, streakMax, momentum, playedTotal, correctTotal };
         }
 
         /**
@@ -216,25 +238,27 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
             const playedTotal = state.playedTotal + 1;
 
             if (!ok) {
-                // wrong tap → energy penalty + streak reset
+                // Wrong tap → energy penalty + streak RESET (momentum persists)
                 const nextEnergy = Math.max(0, Math.min(1, state.energy - ENERGY_LOSS_ON_MISS));
                 const fail = nextEnergy < ENERGY_END_THRESH;
                 return {
                     ...state,
                     playedTotal,
-                    streak: 0,
+                    streak: 0, // reset current streak on the very first miss
+                    // momentum unchanged
                     energy: nextEnergy,
                     phase: fail ? 'fail' : state.phase,
                     endReason: fail ? 'energy' : state.endReason,
                 };
             }
 
-            // correct
+            // Correct tap
             const liveHits = state.liveHits.slice();
             liveHits[idx] = true;
 
             const streak = state.streak + 1;
             const streakMax = Math.max(state.streakMax, streak);
+            const momentum = Math.max(state.momentum, streak); // 🚀 update persistent multiplier
             const correctTotal = state.correctTotal + 1;
 
             const nextEnergy = Math.max(0, Math.min(1, state.energy + ENERGY_GAIN_ON_HIT));
@@ -245,8 +269,35 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
                 liveHits,
                 streak,
                 streakMax,
+                momentum,
                 playedTotal,
                 correctTotal,
+                energy: nextEnergy,
+                phase: fail ? 'fail' : state.phase,
+                endReason: fail ? 'energy' : state.endReason,
+            };
+        }
+
+        /**
+         * LIVE_MISS (index finished lit and was not tapped).
+         * Treat as a miss by omission: decrement energy, reset streak, increment playedTotal.
+         * Momentum does NOT decrease.
+         */
+        case 'LIVE_MISS': {
+            if (state.phase !== 'showingSequence') return state;
+
+            // If that index was actually hit, ignore (race-guard)
+            if (state.liveHits[ev.idx]) return state;
+
+            const playedTotal = state.playedTotal + 1;
+            const nextEnergy = Math.max(0, Math.min(1, state.energy - ENERGY_LOSS_ON_MISS));
+            const fail = nextEnergy < ENERGY_END_THRESH;
+
+            return {
+                ...state,
+                playedTotal,
+                streak: 0, // reset current streak on omission
+                // momentum unchanged
                 energy: nextEnergy,
                 phase: fail ? 'fail' : state.phase,
                 endReason: fail ? 'energy' : state.endReason,
@@ -304,6 +355,10 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
         case 'ENERGY_DELTA': {
             // If paused, ignore external decay/gain (keeps energy frozen)
             if (state.paused) return state;
+
+            // Do not apply negative background decay while user is hitting (streak > 0)
+            if (shouldBlockDecay(state, ev.delta)) return state;
+
             const e = Math.max(0, Math.min(1, state.energy + ev.delta));
             const fail = e < ENERGY_END_THRESH;
             return {

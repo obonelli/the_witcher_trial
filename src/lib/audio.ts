@@ -15,6 +15,7 @@ const MUTE_KEY = 'WST:mute';
 declare global {
     interface Window {
         __bgm?: HTMLAudioElement;
+        __bgmStarting?: boolean; // simple reentrancy/collision guard
     }
 }
 
@@ -37,7 +38,7 @@ export function setMuted(v: boolean) {
                     bgm.pause();
                 } else {
                     // keep volume as configured; just attempt resume
-                    bgm.play().catch(() => { });
+                    bgm.play().catch(() => { /* ignore autoplay block */ });
                 }
             } catch {
                 // ignore
@@ -191,7 +192,7 @@ export async function playSfx(url: string) {
             /* ignore */
         }
         try {
-            el.volume = 1;
+            el.volume = 1; // keep SFX punchy
         } catch {
             /* ignore */
         }
@@ -215,7 +216,10 @@ export function playSfxOnce(url: string, cooldownMs = 40) {
 }
 
 // ===== BGM singleton (Strict Mode safe) ==================================
-function ensureBgm(src: string, volume = 0.4, loop = true) {
+// Lower default to avoid overpowering SFX
+const DEFAULT_BGM_VOL = 0.22;
+
+function ensureBgm(src: string, volume = DEFAULT_BGM_VOL, loop = true) {
     if (typeof window === 'undefined') return undefined;
 
     const url = absUrl(src);
@@ -228,7 +232,12 @@ function ensureBgm(src: string, volume = 0.4, loop = true) {
         el.volume = volume;
         window.__bgm = el;
     } else {
-        if (el.src !== url) el.src = url;
+        // Always normalize properties; if changing track, pause first
+        if (el.src !== url) {
+            try { el.pause(); } catch { /* ignore */ }
+            el.src = url;
+            try { el.currentTime = 0; } catch { /* ignore */ }
+        }
         el.loop = loop;
         el.volume = volume;
     }
@@ -236,20 +245,52 @@ function ensureBgm(src: string, volume = 0.4, loop = true) {
     return el;
 }
 
-/** Start or resume BGM. No-op if muted. */
+/** Start or resume BGM. No-op if muted. Idempotent: avoids double playback. */
 export function playBgm(src: string, opts?: { volume?: number; loop?: boolean }) {
-    const el = ensureBgm(src, opts?.volume ?? 0.4, opts?.loop ?? true);
+    const vol = opts?.volume ?? DEFAULT_BGM_VOL;
+    const loop = opts?.loop ?? true;
+
+    const el = ensureBgm(src, vol, loop);
     if (!el) return;
+
+    // If muted, ensure paused and bail
     if (isMuted()) {
-        try {
-            el.pause();
-        } catch {
-            /* ignore */
-        }
+        try { el.pause(); } catch { /* ignore */ }
         return;
     }
-    el.play().catch(() => {
-        // Autoplay might require a user gesture; ignore error
+
+    // Prevent re-entrant .play() races
+    if (typeof window !== 'undefined' && window.__bgmStarting) return;
+
+    // Idempotent behavior:
+    // - Same src & already playing => just update volume/loop; don't call play()
+    // - Same src & paused => resume once
+    // - Different src => paused above, set src, reset time, then play once
+    const sameSrc = el.src === absUrl(src);
+    const alreadyPlaying = !el.paused && !el.ended;
+
+    try {
+        el.volume = vol;
+        el.loop = loop;
+    } catch { /* ignore */ }
+
+    if (sameSrc && alreadyPlaying) {
+        // Nothing else to do; avoid second concurrent playback
+        return;
+    }
+
+    if (sameSrc && el.paused) {
+        window.__bgmStarting = true;
+        el.play().catch(() => { /* ignore autoplay */ }).finally(() => {
+            if (typeof window !== 'undefined') window.__bgmStarting = false;
+        });
+        return;
+    }
+
+    // Different source path: currentTime was reset in ensureBgm; play once
+    window.__bgmStarting = true;
+    el.play().catch(() => { /* ignore autoplay */ }).finally(() => {
+        if (typeof window !== 'undefined') window.__bgmStarting = false;
     });
 }
 

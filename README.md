@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚔️ Witcher Signs Trainer
 
-## Getting Started
+A mini reflex & memory game inspired by **The Witcher**, built with [Next.js](https://nextjs.org) + React.  
+Your mission is to invoke the **glyphs** correctly, keep your **energy** alive, and reach the highest streak to awaken the Guardians and face the beasts.
 
-First, run the development server:
+![Gameplay Screenshot](./public/assets/screenshots/gameplay.png)
+
+---
+
+## ✨ Features
+
+- 🔮 **Elemental glyphs** with custom sounds and visuals.  
+- 🧠 **Reflex mode**: press the lit glyph before it fades.  
+- ⚡ **Energy system**: hits restore energy, misses drain it.  
+- 📈 **Local highscores** saved automatically.  
+- 🎶 **Epic background music** balanced with punchy SFX.  
+- 📊 **Dynamic results screen** with narrative outcomes:  
+  - Level ≤ 2 → *Energy Insufficient*  
+  - Level 3 → *The Guardians Awaken*  
+  - Level ≥ 4 → *Master of Signs*  
+
+---
+
+## 🚀 Getting Started
+
+Clone the repo and enter the folder:
+
+```bash
+git clone https://github.com/your-username/witcher-signs-trainer.git
+cd witcher-signs-trainer
+```
+
+Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🕹️ Controls
 
-## Learn More
+- **Click / Tap** → activate the glowing glyph.  
+- **Spacebar** → surrender instantly.  
+- **Pause button** → freeze the flow without losing progress.  
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📸 Results
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Depending on your level, you’ll get a **narrative outcome**:  
 
-## Deploy on Vercel
+| Level | Outcome | Example |
+|-------|---------|---------|
+| ≤ 2   | *Energy Insufficient* – Not enough energy to help the Guardians. | ![Fail](./public/assets/screenshots/result_fail.png) |
+| 3     | *The Guardians Awaken* – With your energy, we can face the beasts. | ![Hero](./public/assets/screenshots/result_hero.png) |
+| ≥ 4   | *Master of Signs* – Epic master, the shadows recoil before you. | ![Master](./public/assets/screenshots/result_master.png) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🛠️ Tech Stack
+
+- [Next.js 14](https://nextjs.org)  
+- [React](https://react.dev)  
+- [TypeScript](https://www.typescriptlang.org/)  
+- [TailwindCSS](https://tailwindcss.com/)  
+- [Material UI](https://mui.com/)  
+- **HTML5 Audio API** for background music & SFX  
+
+---
+
+## 🌐 Deploy
+
+Optimized for deployment on [Vercel](https://vercel.com).  
+Fork this repo, connect it to your Vercel account, and get the game live in seconds.  
+
+---
+
+## 🤝 Contributing
+
+Suggestions, UI/UX improvements, new glyphs or modes are welcome.  
+Open an issue or PR to collaborate.  
+
+---
+
+## 📜 License
+
+This project is distributed under the **MIT License**.  
+Inspired by the universe of *The Witcher* (© CD PROJEKT RED).  
+This is a fan-made, non-commercial educational project.

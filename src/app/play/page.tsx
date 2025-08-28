@@ -31,6 +31,9 @@ export default function PlayPage() {
     const isShowing = state.phase === 'showingSequence';
     const canClick = !state.paused && isShowing && seqIdx >= 0;
 
+    /** Damage FX nonce (updates on every miss/omission) */
+    const [damageStamp, setDamageStamp] = useState<number>(0);
+
     /** Legacy visual progress (kept for compatibility with TimerBar) */
     const [progress, setProgress] = useState(1);
 
@@ -62,7 +65,10 @@ export default function PlayPage() {
         return () => cancelAnimationFrame(raf);
     }, [modalOpen, modalStage, state.phase, state.paused]);
 
-    /** Reveal sequence (lights only, no SFX). */
+    /**
+     * Reveal sequence (lights only, no SFX).
+     * New: when each lit window ends, if that index was NOT tapped, dispatch LIVE_MISS.
+     */
     useEffect(() => {
         let stop = false;
         async function playSequence() {
@@ -73,9 +79,17 @@ export default function PlayPage() {
             for (let i = 0; i < state.sequence.length; i++) {
                 if (stop || pausedRef.current) return;
                 setSeqIdx(i);
+
                 // (No auto SFX while revealing)
                 await new Promise((r) => setTimeout(r, Math.max(200, per - 120)));
                 if (stop || pausedRef.current) return;
+
+                // If this index wasn't tapped while lit → omission miss
+                if (!state.liveHits[i]) {
+                    setDamageStamp(Date.now());                 // 🔴 trigger damage FX
+                    dispatch({ type: 'LIVE_MISS', idx: i });
+                }
+
                 setSeqIdx(-1);
                 await new Promise((r) => setTimeout(r, 140));
             }
@@ -83,7 +97,8 @@ export default function PlayPage() {
         }
         if (isShowing && state.sequence.length > 0) void playSequence();
         return () => { stop = true; };
-    }, [isShowing, state.sequence, state.level, state.paused, dispatch]);
+        // include liveHits so the loop checks the current tap state for each index
+    }, [isShowing, state.sequence, state.level, state.paused, state.liveHits]);
 
     /** Visual timer bar (not used to end the game). */
     useEffect(() => {
@@ -147,7 +162,7 @@ export default function PlayPage() {
 
         const g = GLYPHS.find((x) => x.id === id);
         if (g) playSfx(g.sfx);
-        if (ok) buzzOk(); else buzzBad();
+        if (ok) buzzOk(); else { buzzBad(); setDamageStamp(Date.now()); } // 🔴 damage on wrong tap
 
         dispatch({ type: 'LIVE_HIT', ok, idx: seqIdx, glyph: id, now: Date.now() });
     }
@@ -255,6 +270,7 @@ export default function PlayPage() {
                 mult={1 + Math.floor(state.streak / 5)}
                 paused={state.paused}
                 onTogglePause={() => dispatch({ type: 'TOGGLE_PAUSED' })}
+                damageStamp={damageStamp}
             />
         </main>
     );

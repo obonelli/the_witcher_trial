@@ -2,7 +2,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, Dialog, DialogContent, Stack, Typography, useMediaQuery } from '@mui/material';
+import {
+    Box,
+    Dialog,
+    DialogContent,
+    Stack,
+    Typography,
+    useMediaQuery,
+} from '@mui/material';
 import { GLYPHS, GlyphDef, GlyphId } from '@/config/glyphs';
 
 import GameModalTopBar from './GameModalTopBar';
@@ -13,13 +20,13 @@ type Stage = 'countdown' | 'live';
 
 type Props = {
     open: boolean;
-    stage: Stage;                 // 'countdown' | 'live'
-    seconds?: number;             // default 3 (for countdown)
-    activeId: GlyphId | null;     // glyph lit while the sequence is showing
-    canClick: boolean;            // only accept taps while a glyph is lit
-    energy: number;               // 0..1 (always visible, also during countdown)
+    stage: Stage; // 'countdown' | 'live'
+    seconds?: number; // default 3 (for countdown)
+    activeId: GlyphId | null; // glyph lit while the sequence is showing
+    canClick: boolean; // only accept taps while a glyph is lit
+    energy: number; // 0..1 (always visible, also during countdown)
     onGlyph: (id: GlyphId) => void;
-    onCountdownDone: () => void;  // called once 3-2-1 finishes
+    onCountdownDone: () => void; // called once 3-2-1 finishes
     onSurrender?: () => void;
 
     // Stats
@@ -28,11 +35,20 @@ type Props = {
     streak: number;
     mult: number;
 
+    // Damage FX (timestamp/nonce updated on miss/omission)
+    damageStamp?: number;
+
     // Pause/Resume (controlled if provided). If omitted, component manages local pause state.
     paused?: boolean;
     onTogglePause?: () => void;
 };
 
+/**
+ * Main game modal:
+ * - Wires keyboard/mouse input, pause state, countdown, and FX triggers.
+ * - Passes `level` to the TopBar so it can flip "Surrender" → "Destroy the Beast".
+ * - The grid is purely for tiles/FX; no surrender button inside.
+ */
 export default function GameModal({
     open,
     stage,
@@ -47,6 +63,7 @@ export default function GameModal({
     level,
     streak,
     mult,
+    damageStamp,
     paused,
     onTogglePause,
 }: Props) {
@@ -97,32 +114,37 @@ export default function GameModal({
     }, [open, stage, seconds, onCountdownDone, pausedEffective]);
 
     /** Trigger burst FX and notify parent – using pointerdown for low latency. */
-    const handleTilePointer = useCallback((id: GlyphId) => {
-        if (pausedEffective) return;
+    const handleTilePointer = useCallback(
+        (id: GlyphId) => {
+            if (pausedEffective) return;
 
-        // Grace window: accept presses up to 220ms after the glyph stopped being lit.
-        const now = performance.now();
-        const graceMs = 220;
-        const litOk =
-            (stage === 'live' && canClick && activeId === id) ||
-            (stage === 'live' && lastLitRef.current.id === id && now - lastLitRef.current.ts <= graceMs);
+            // Grace window: accept presses up to 220ms after the glyph stopped being lit.
+            const now = performance.now();
+            const graceMs = 220;
+            const litOk =
+                (stage === 'live' && canClick && activeId === id) ||
+                (stage === 'live' &&
+                    lastLitRef.current.id === id &&
+                    now - lastLitRef.current.ts <= graceMs);
 
-        if (!litOk) return;
+            if (!litOk) return;
 
-        // Start burst FX
-        setFxStamp((prev) => ({ ...prev, [id]: now }));
-        // auto-clean so subsequent taps re-trigger (no `any`)
-        setTimeout(() => {
-            setFxStamp((prev) => {
-                const rest: Partial<Record<GlyphId, number>> = { ...prev };
-                delete rest[id];
-                return rest;
-            });
-        }, 520);
+            // Start burst FX
+            setFxStamp((prev) => ({ ...prev, [id]: now }));
+            // auto-clean so subsequent taps re-trigger
+            setTimeout(() => {
+                setFxStamp((prev) => {
+                    const rest: Partial<Record<GlyphId, number>> = { ...prev };
+                    delete rest[id];
+                    return rest;
+                });
+            }, 520);
 
-        // Notify parent
-        onGlyph(id);
-    }, [activeId, canClick, onGlyph, pausedEffective, stage]);
+            // Notify parent
+            onGlyph(id);
+        },
+        [activeId, canClick, onGlyph, pausedEffective, stage]
+    );
 
     // Keyboard shortcuts (disable while paused)
     const onKey = useCallback(
@@ -161,6 +183,11 @@ export default function GameModal({
         };
     }, [open]);
 
+    // Safe surrender dispatcher (no-op if not provided)
+    const handleSurrenderSafe = useCallback(() => {
+        onSurrender?.();
+    }, [onSurrender]);
+
     return (
         <Dialog
             open={open}
@@ -179,19 +206,23 @@ export default function GameModal({
                     pb: 'env(safe-area-inset-bottom)',
                     bgcolor: '#0e0b14',
                     borderRadius: { xs: 1.5, sm: 2 },
-                    boxShadow: '0 0 0 1px rgba(124,77,255,0.25), 0 16px 40px rgba(0,0,0,0.6)',
+                    boxShadow:
+                        '0 0 0 1px rgba(124,77,255,0.25), 0 16px 40px rgba(0,0,0,0.6)',
                     position: 'relative',
                     overflow: 'hidden',
                 },
             }}
         >
-            <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 3, sm: 4 }, position: 'relative' }}>
+            <DialogContent
+                sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 3, sm: 4 }, position: 'relative' }}
+            >
                 {/* Top controls (zIndex > overlay) */}
                 <GameModalTopBar
                     paused={pausedEffective}
                     onTogglePause={togglePause}
-                    onSurrender={onSurrender}
+                    onSurrender={handleSurrenderSafe}
                     isMobile={isMobile}
+                    level={level} // NEW: pass level so the label can switch
                 />
 
                 {/* Visual overlay (does NOT block clicks) */}
@@ -203,10 +234,11 @@ export default function GameModal({
                             inset: 0,
                             zIndex: 2,
                             backdropFilter: 'blur(2px)',
-                            background: 'linear-gradient(180deg, rgba(10,8,14,0.45), rgba(10,8,14,0.65))',
+                            background:
+                                'linear-gradient(180deg, rgba(10,8,14,0.45), rgba(10,8,14,0.65))',
                             display: 'grid',
                             placeItems: 'center',
-                            pointerEvents: 'none', // important: do not block top buttons
+                            pointerEvents: 'none', // do not block top buttons
                         }}
                     >
                         <Typography
@@ -227,7 +259,11 @@ export default function GameModal({
                     </Box>
                 )}
 
-                <Stack spacing={2} alignItems="center" sx={{ minHeight: { xs: 440, sm: 500 }, position: 'relative' }}>
+                <Stack
+                    spacing={2}
+                    alignItems="center"
+                    sx={{ minHeight: { xs: 440, sm: 500 }, position: 'relative' }}
+                >
                     {/* Header */}
                     <Box
                         sx={{
@@ -264,13 +300,14 @@ export default function GameModal({
                         isMobile={isMobile}
                     />
 
-                    {/* Grid */}
+                    {/* Grid (no surrender button here) */}
                     <GameModalGrid
                         stage={stage}
                         activeId={activeId}
                         canClick={canClick}
                         paused={pausedEffective}
                         fxStamp={fxStamp}
+                        damageStamp={damageStamp}
                         onTilePointer={handleTilePointer}
                     />
 
