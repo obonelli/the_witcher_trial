@@ -5,20 +5,27 @@ import { GamePhase } from '@/config/gameConfig';
 import { GlyphId, GLYPHS } from '@/config/glyphs';
 import { mulberry32 } from '@/lib/rng';
 import { streakMultiplier, speedBonus, calcRoundScore } from '@/lib/scoring';
-import { sequenceLengthForLevel, inputWindowMs } from '@/lib/difficulty';
+import { sequenceLengthForLevel, inputWindowMs, ROUNDS_PER_LEVEL } from '@/lib/difficulty';
 
 /**
  * Energy gameplay tuning (exported so UI can reuse them if needed)
- * More-forgiving values so a single miss doesn't end the run.
+ * Adjust these to change survivability. Higher decay = harsher.
  */
-export const ENERGY_END_THRESH = 0.35;   // game over only under 35%
-export const ENERGY_GAIN_ON_HIT = 0.09;  // energy gained per correct tap
-export const ENERGY_LOSS_ON_MISS = 0.12; // energy lost per wrong tap
-export const ENERGY_DECAY_PER_SEC = 0.025; // continuous decay while playing
+export const ENERGY_END_THRESH = 0.35;    // game over only under 35%
+export const ENERGY_GAIN_ON_HIT = 0.09;   // energy gained per correct tap
+export const ENERGY_LOSS_ON_MISS = 0.12;  // energy lost per wrong tap
+export const ENERGY_DECAY_PER_SEC = 0.12; // continuous decay while playing (↑ to drop faster)
 
 export type GameState = {
     phase: GamePhase;
     level: number;
+
+    /**
+     * Successful rounds completed at the current level.
+     * When this reaches ROUNDS_PER_LEVEL, we increment the level and reset this counter.
+     */
+    roundsAtLevel: number;
+
     sequence: GlyphId[];
     inputIndex: number; // kept for backward-compat, unused in live-tap mode
     score: number;
@@ -44,6 +51,7 @@ export type GameState = {
 export const initialState: GameState = {
     phase: 'intro',
     level: 1,
+    roundsAtLevel: 0,
     sequence: [],
     inputIndex: 0,
     score: 0,
@@ -119,7 +127,7 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
          * End of "showingSequence".
          * In energy mode there is NO fail here if some indices weren't tapped.
          * We award score based on number of indices successfully tapped while lit,
-         * and then proceed to the next round.
+         * and then wait for an explicit ROUND_SUCCESS or continue flow from the page.
          */
         case 'SEQ_SHOWN': {
             const hits = state.liveHits.filter(Boolean).length;
@@ -162,10 +170,7 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
 
             if (nextIndex >= state.sequence.length) {
                 const roundTotalMs = state.roundTotalMs ?? 0;
-                const timeRemainingMs = Math.max(
-                    0,
-                    (state.roundStartMs ?? ev.now) + roundTotalMs - ev.now
-                );
+                const timeRemainingMs = Math.max(0, (state.roundStartMs ?? ev.now) + roundTotalMs - ev.now);
                 const mult = streakMultiplier(streak);
                 const spd = speedBonus(timeRemainingMs, roundTotalMs, 50);
                 const roundScore = calcRoundScore({
@@ -249,12 +254,18 @@ export function gameReducer(state: GameState, ev: GameEvent): GameState {
         }
 
         case 'ROUND_SUCCESS': {
-            // Advance level and prepare next sequence (energy carries over)
-            const nextLevel = state.level + 1;
+            // Slower level-up: require multiple successes before incrementing the level.
+            const nextRoundsAtLevel = state.roundsAtLevel + 1;
+            const shouldLevelUp = nextRoundsAtLevel >= ROUNDS_PER_LEVEL;
+
+            const nextLevel = shouldLevelUp ? state.level + 1 : state.level;
+            const newRoundsAtLevel = shouldLevelUp ? 0 : nextRoundsAtLevel;
+
             const seq = generateSequence(nextLevel, state.seed);
             return {
                 ...state,
                 level: nextLevel,
+                roundsAtLevel: newRoundsAtLevel,
                 phase: 'showingSequence',
                 sequence: seq,
                 inputIndex: 0,

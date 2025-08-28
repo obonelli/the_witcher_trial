@@ -1,5 +1,8 @@
 'use client';
 
+// Pure presentational progress bar.
+// All comments in English.
+
 export default function TimerBar({ progress, paused = false }: { progress: number; paused?: boolean }) {
     // progress: 0..1
     const pct = Math.max(0, Math.min(1, progress)) * 100;

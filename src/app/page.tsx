@@ -21,7 +21,7 @@ export default function HomePage() {
         <div className="relative mx-auto play-wrap px-4 md:px-6 py-12 md:py-20">
           <div className="max-w-3xl">
             <span className="inline-block text-xs tracking-wide text-[color:var(--fx-steel)] mb-2">
-              v0.2 • guardian hunt
+              v0.3 • guardian hunt
             </span>
 
             {/* volvemos al título anterior */}

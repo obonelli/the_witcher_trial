@@ -1,5 +1,8 @@
 'use client';
 
+// Simple, stateless sequence visualizer.
+// All comments in English.
+
 import Image from 'next/image';
 import { GlyphId, GLYPHS, GlyphDef } from '@/config/glyphs';
 

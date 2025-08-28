@@ -1,14 +1,15 @@
-// Difficulty curve tuning: sequence length, reveal speed, input window, fakes
+// Difficulty curve tuning: sequence length, reveal speed, input window, fakes, and progression
+// All comments in English.
 
 // Central knobs so you can tweak quickly
 export const DIFFICULTY = {
     // Reveal time per glyph (ms)
     show: {
-        easy: 900,     // levels 1–3
-        medium: 750,   // levels 4–6
-        hard: 620,     // levels 7–9
-        endlessMin: 380, // minimum at very high levels
-        stepEndless: 20, // reduce per level after 10 (clamped by endlessMin)
+        easy: 900,        // levels 1–3
+        medium: 750,      // levels 4–6
+        hard: 620,        // levels 7–9
+        endlessMin: 380,  // minimum at very high levels
+        stepEndless: 20,  // reduce per level after 10 (clamped by endlessMin)
     },
 
     // Input window = factor * (show time * sequence length), clamped
@@ -34,6 +35,10 @@ export const DIFFICULTY = {
         baseAfter9: 10,
     },
 };
+
+// Progression knob: how many successful rounds are required to level up.
+// Increase this to make leveling slower (e.g., 3 means "3 wins per level").
+export const ROUNDS_PER_LEVEL = 3;
 
 // --- Sequence length ---
 
@@ -73,6 +78,7 @@ export function inputWindowMs(level: number, seqLen: number): number {
 
 export function fakeCountForLevel(level: number): number {
     if (level < DIFFICULTY.fakes.startAtLevel) return 0;
-    const steps = Math.floor((level - DIFFICULTY.fakes.startAtLevel) / DIFFICULTY.fakes.stepLevels) + 1;
+    const steps =
+        Math.floor((level - DIFFICULTY.fakes.startAtLevel) / DIFFICULTY.fakes.stepLevels) + 1;
     return Math.min(DIFFICULTY.fakes.maxFakes, steps);
 }
