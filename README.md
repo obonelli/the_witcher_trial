@@ -3,7 +3,9 @@
 A mini reflex & memory game inspired by **The Witcher**, built with [Next.js](https://nextjs.org) + React.  
 Your mission is to invoke the **glyphs** correctly, keep your **energy** alive, and reach the highest streak to awaken the Guardians and face the beasts.
 
-![Gameplay Screenshot](./public/assets/screenshots/gameplay.png)
+[▶️ Live demo](https://the-witcher-trial.vercel.app/)
+
+![Gameplay screenshot](./public/og-image.png)
 
 ---
 
