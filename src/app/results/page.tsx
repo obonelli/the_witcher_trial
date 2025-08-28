@@ -8,6 +8,15 @@ import { getLastResult } from '@/lib/storage/highscores';
 
 type Cause = 'beast' | 'surrender' | 'win' | 'timeout' | 'energy' | undefined;
 
+// Shape we expect from local storage (what getLastResult() returns)
+type StoredResult = {
+    score: number;
+    accuracy: number;
+    level: number;
+    streakMax: number;
+    cause?: Cause;
+} | null;
+
 type Last = {
     score: number;
     accuracy: number;
@@ -103,18 +112,18 @@ export default function ResultsPage() {
     const [data, setData] = useState<Last>(null);
 
     useEffect(() => {
-        const r = getLastResult();
-        // r may already include cause if you store it on game over
+        const r = getLastResult() as StoredResult; // <- typed, no 'any'
         if (r) {
-            // Defensive parse of optional search param ?cause=beast (optional helper)
+            // Optional search param override (?cause=beast)
             const sp = new URLSearchParams(window.location.search);
             const qp = sp.get('cause') as Cause | null;
+
             setData({
                 score: r.score,
                 accuracy: r.accuracy,
                 level: r.level,
                 streakMax: r.streakMax,
-                cause: (qp ?? (r as any).cause) as Cause,
+                cause: (qp ?? r.cause) as Cause,
             });
         }
     }, []);
